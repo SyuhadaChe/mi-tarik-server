@@ -97,7 +97,7 @@
         total: cart.reduce((sum, item) => sum + item.price, 0)
       };
 
-      fetch("https://mi-tarik-backend.onrender.com/order", {
+      fetch(https://mi-tarik-server.onrender.com/, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order)
