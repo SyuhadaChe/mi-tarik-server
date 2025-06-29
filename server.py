@@ -1,62 +1,66 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-MENU_FILE = "menu.json"
 ORDERS_FILE = "website_orders.json"
+MENU_FILE = "menu.json"
 
-# ---------- Load Menu ----------
-@app.route("/menu", methods=["GET", "POST"])
-def menu():
-    if request.method == "GET":
-        if os.path.exists(MENU_FILE):
-            with open(MENU_FILE, "r") as f:
-                return jsonify(json.load(f))
-        return jsonify([])
-    
-    if request.method == "POST":
-        data = request.get_json()
-        if os.path.exists(MENU_FILE):
-            with open(MENU_FILE, "r") as f:
-                menu = json.load(f)
-        else:
-            menu = []
-        menu.append(data)
-        with open(MENU_FILE, "w") as f:
-            json.dump(menu, f, indent=2)
-        return jsonify({"status": "added", "item": data})
+# Ensure files exist
+if not os.path.exists(ORDERS_FILE):
+    with open(ORDERS_FILE, "w") as f:
+        json.dump([], f)
 
+if not os.path.exists(MENU_FILE):
+    with open(MENU_FILE, "w") as f:
+        json.dump([], f)
 
-# ---------- Submit Order ----------
 @app.route("/order", methods=["POST"])
-def submit_order():
+def receive_order():
     try:
-        data = request.get_json()
-        if os.path.exists(ORDERS_FILE):
-            with open(ORDERS_FILE, "r") as f:
-                orders = json.load(f)
-        else:
-            orders = []
+        data = request.json
+        with open(ORDERS_FILE, "r") as f:
+            orders = json.load(f)
         orders.append(data)
         with open(ORDERS_FILE, "w") as f:
             json.dump(orders, f, indent=2)
-        return jsonify({"status": "received", "order": data})
+        return jsonify({"message": "Order received"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- View Orders ----------
 @app.route("/orders", methods=["GET"])
 def get_orders():
-    if os.path.exists(ORDERS_FILE):
+    try:
         with open(ORDERS_FILE, "r") as f:
-            return jsonify(json.load(f))
-    return jsonify([])
+            orders = json.load(f)
+        return jsonify(orders)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-# ---------- Run Server ----------
+@app.route("/menu", methods=["GET"])
+def get_menu():
+    try:
+        with open(MENU_FILE, "r") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/menu", methods=["POST"])
+def add_menu_item():
+    try:
+        new_item = request.json
+        with open(MENU_FILE, "r") as f:
+            current_menu = json.load(f)
+        current_menu.append(new_item)
+        with open(MENU_FILE, "w") as f:
+            json.dump(current_menu, f, indent=2)
+        return jsonify({"message": "Menu item added"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
-    app.run(debug=False, port=5000)
+    app.run(debug=True, port=5000)
