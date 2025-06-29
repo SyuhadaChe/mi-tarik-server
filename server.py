@@ -17,7 +17,6 @@ def menu():
                 return jsonify(json.load(f))
         else:
             return jsonify([])
-
     if request.method == "POST":
         data = request.get_json()
         if os.path.exists(MENU_FILE):
@@ -30,7 +29,6 @@ def menu():
             json.dump(menu, f, indent=2)
         return jsonify({"status": "added"})
 
-
 @app.route("/order", methods=["POST"])
 def order():
     data = request.get_json()
@@ -39,13 +37,10 @@ def order():
             orders = json.load(f)
     else:
         orders = []
-
     orders.append(data)
     with open(ORDER_FILE, "w") as f:
         json.dump(orders, f, indent=2)
-
     return jsonify({"status": "received"})
-
 
 @app.route("/orders", methods=["GET"])
 def get_orders():
@@ -54,4 +49,11 @@ def get_orders():
             return jsonify(json.load(f))
     else:
         return jsonify([])
+
+if __name__ == "__main__":
+    app.run()
+
+           
+
+
 
