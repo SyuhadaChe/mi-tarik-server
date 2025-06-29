@@ -1,13 +1,4 @@
-#-------------------------------------------------------------------------------
-# Name:        module2
-# Purpose:
-#
-# Author:      hadac
-#
-# Created:     29/06/2025
-# Copyright:   (c) hadac 2025
-# Licence:     <your licence>
-#-------------------------------------------------------------------------------
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
@@ -18,29 +9,39 @@ CORS(app)
 
 ORDERS_FILE = "website_orders.json"
 
-@app.route('/order', methods=['POST'])
-def save_order():
-    try:
-        data = request.get_json()
-
-        if os.path.exists(ORDERS_FILE):
+# Load existing orders if file exists
+def load_orders():
+    if os.path.exists(ORDERS_FILE):
+        try:
             with open(ORDERS_FILE, 'r') as f:
-                orders = json.load(f)
-        else:
-            orders = []
+                return json.load(f)
+        except:
+            return []
+    return []
 
-        orders.append(data)
+# Save order to JSON file
+def save_order(order):
+    orders = load_orders()
+    orders.append(order)
+    with open(ORDERS_FILE, 'w') as f:
+        json.dump(orders, f, indent=2)
 
-        with open(ORDERS_FILE, 'w') as f:
-            json.dump(orders, f, indent=2)
-
-        return jsonify({"status": "success"}), 200
+# Route to handle order submission from website
+@app.route('/order', methods=['POST'])
+def receive_order():
+    try:
+        order = request.json
+        save_order(order)
+        return jsonify({"message": "Order received!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/', methods=['GET'])
+# Optional: root route
+@app.route('/')
 def home():
-    return "Mi Tarik Server is running!"
+    return "Mi Tarik Station Order Server is running."
 
-if __name__ == '__main__':
-    app.run()
+# Run the app
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Required for Render
+    app.run(host='0.0.0.0', port=port)
