@@ -1,132 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Mi Tarik Station Menu</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-      background-color: #fff8f0;
-    }
-    h1 {
-      text-align: center;
-      color: #b33c00;
-    }
-    label, select, input {
-      display: block;
-      margin-top: 10px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #b33c00;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #e65c00;
-    }
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
+    body { font-family: Arial; padding: 20px; }
+    button { margin-top: 10px; }
   </style>
 </head>
 <body>
+  <h1>Mi Tarik Station Menu</h1>
+  <form id="orderForm">
+    <label>Name: <input type="text" id="name" required></label><br><br>
+    <label>Order Type:
+      <select id="type">
+        <option>Online Order</option>
+        <option>Takeaway</option>
+        <option>Dine In</option>
+      </select>
+    </label><br><br>
 
-  <h1>🍜 Mi Tarik Menu 🍜</h1>
+    <h3>Select Items:</h3>
+    <label><input type="checkbox" value="braised beef ramen" data-price="22"> Braised Beef Ramen - RM22.00</label><br>
+    <label><input type="checkbox" value="beef ramen" data-price="16"> Beef Ramen - RM16.00</label><br>
+    <label><input type="checkbox" value="fried dumpling" data-price="12"> Fried Dumpling - RM12.00</label><br><br>
 
-  <label for="name">Your Name:</label>
-  <input type="text" id="name" placeholder="Enter your name">
+    <button type="submit">Submit Order</button>
+  </form>
 
-  <label for="type">Order Type:</label>
-  <select id="type">
-    <option>Online Order</option>
-    <option>Takeaway</option>
-    <option>Dine In</option>
-  </select>
-
-  <h3>Choose Menu Items:</h3>
-  <ul id="menu"></ul>
-
-  <h4>Total: RM <span id="total">0.00</span></h4>
-
-  <button onclick="submitOrder()">Submit Order</button>
+  <div id="result"></div>
 
   <script>
-    const items = [
-      { id: 1, name: "Braised Beef Ramen", price: 22.00 },
-      { id: 2, name: "Beef Ramen", price: 16.00 },
-      { id: 3, name: "Fried Dumpling", price: 12.00 }
-    ];
-
-    const cart = [];
-
-    function updateCart() {
-      let total = cart.reduce((sum, item) => sum + item.price, 0);
-      document.getElementById("total").textContent = total.toFixed(2);
-    }
-
-    function addToCart(item) {
-      cart.push(item);
-      updateCart();
-      alert(item.name + " added to cart!");
-    }
-
-    function submitOrder() {
+    document.getElementById("orderForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
       const name = document.getElementById("name").value.trim();
       const type = document.getElementById("type").value;
 
-      if (!name) {
-        alert("Please enter your name.");
-        return;
-      }
-      if (cart.length === 0) {
-        alert("Your cart is empty.");
-        return;
-      }
-
-      const order = {
-        name: name,
-        type: type,
-        items: cart,
-        total: cart.reduce((sum, item) => sum + item.price, 0)
-      };
-
-      fetch(https://mi-tarik-server.onrender.com/, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order)
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Server error");
-        return res.json();
-      })
-      .then(data => {
-        alert("Order submitted successfully!");
-        cart.length = 0;
-        updateCart();
-      })
-      .catch(err => {
-        alert("Failed to submit order.\n" + err.message);
+      const checkboxes = document.querySelectorAll("input[type='checkbox']:checked");
+      const items = [];
+      let total = 0;
+      checkboxes.forEach(cb => {
+        const price = parseFloat(cb.dataset.price);
+        items.push({ name: cb.value, price });
+        total += price;
       });
-    }
 
-    // Display menu
-    const menuList = document.getElementById("menu");
-    items.forEach(item => {
-      const li = document.createElement("li");
-      const btn = document.createElement("button");
-      btn.textContent = `${item.name} - RM${item.price.toFixed(2)}`;
-      btn.onclick = () => addToCart(item);
-      li.appendChild(btn);
-      menuList.appendChild(li);
+      if (items.length === 0) {
+        alert("Please select at least one item.");
+        return;
+      }
+
+      const order = { name, type, items, total };
+
+      try {
+        const res = await fetch("https://mi-tarik-server.onrender.com/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(order)
+        });
+
+        const result = document.getElementById("result");
+
+        if (res.ok) {
+          result.innerHTML = "<p style='color: green;'>Order submitted successfully!</p>";
+        } else {
+          const errorText = await res.text();
+          result.innerHTML = `<p style='color: red;'>Server error: ${res.status} - ${errorText}</p>`;
+        }
+      } catch (err) {
+        document.getElementById("result").innerHTML = "<p style='color: red;'>Failed to connect to server.</p>";
+        console.error(err);
+      }
     });
   </script>
-
 </body>
 </html>
