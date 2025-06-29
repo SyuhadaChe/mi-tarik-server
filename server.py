@@ -68,6 +68,18 @@ def add_menu_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/menu/<int:item_id>", methods=["DELETE"])
+def delete_menu_item(item_id):
+    try:
+        with open(MENU_FILE, "r") as f:
+            current_menu = json.load(f)
+        updated_menu = [item for item in current_menu if item["id"] != item_id]
+        with open(MENU_FILE, "w") as f:
+            json.dump(updated_menu, f, indent=2)
+        return jsonify({"message": "Item deleted"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def show_gui_popup():
     try:
         root = Tk()
@@ -112,4 +124,3 @@ if __name__ == "__main__":
     print("\n🔗 Server running at: http://127.0.0.1:5000")
     show_gui_popup()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
