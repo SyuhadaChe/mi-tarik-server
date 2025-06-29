@@ -2,6 +2,9 @@
 from flask_cors import CORS
 import json
 import os
+import qrcode
+from tkinter import messagebox, Tk, simpledialog
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -64,11 +67,39 @@ def add_menu_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def show_gui_popup():
+    try:
+        url = "https://syuhadache.github.io/Mi-Tarik-Menu"
+        qr = qrcode.make(url)
+        qr.save("qr_temp.png")
+
+        root = Tk()
+        root.withdraw()  # Hide main window
+        messagebox.showinfo("Scan QR", f"Scan the QR code to view menu:\n{url}")
+        os.system("start qr_temp.png")
+
+        admin_pw = simpledialog.askstring("Admin", "Enter admin password:", show='*')
+        if admin_pw == "admin123":
+            try:
+                response = requests.get("https://mi-tarik-server.onrender.com/orders")
+                if response.status_code == 200:
+                    orders = response.json()
+                    order_text = "\n\n".join([
+                        f"Order by {o['name']} ({o['type']}):\n" +
+                        "\n".join(f"- {item['name']} - RM{item['price']:.2f}" for item in o['items']) +
+                        f"\nTotal: RM{o['total']:.2f}"
+                        for o in orders
+                    ])
+                    messagebox.showinfo("Website Orders", order_text or "No orders found.")
+                else:
+                    messagebox.showerror("Error", f"Failed to fetch orders. Status: {response.status_code}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to fetch orders.\n{e}")
+        root.destroy()
+    except Exception as e:
+        print(f"⚠️ QR popup failed: {e}")
+
 if __name__ == "__main__":
-    # If running locally for QR in GUI
     print("\n🔗 Server running at: http://127.0.0.1:5000")
-    import qrcode
-    url = "https://syuhadache.github.io/Mi-Tarik-Menu"
-    img = qrcode.make(url)
-    img.show()  # Open QR code
+    show_gui_popup()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
