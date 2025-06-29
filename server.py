@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+   from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 import os
@@ -65,4 +65,10 @@ def add_menu_item():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    # If running locally for QR in GUI
+    print("\n🔗 Server running at: http://127.0.0.1:5000")
+    import qrcode
+    url = "https://syuhadache.github.io/Mi-Tarik-Menu"
+    img = qrcode.make(url)
+    img.show()  # Open QR code
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
