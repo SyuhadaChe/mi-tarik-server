@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Braised Beef Ramen",
+    "price": 22.00,
+    "image_url": "https://i.imgur.com/vtQvH9O.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Beef Ramen",
+    "price": 16.00,
+    "image_url": "https://i.imgur.com/Ilp0r6p.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Fried Dumpling",
+    "price": 12.00,
+    "image_url": "https://i.imgur.com/EmMt2Hd.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Green Tea",
+    "price": 4.00,
+    "image_url": "https://i.imgur.com/T4V8sJo.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Mango Pudding",
+    "price": 5.50,
+    "image_url": "https://i.imgur.com/K7Xh4MO.jpg"
+  }
+]
