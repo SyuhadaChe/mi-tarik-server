@@ -1,15 +1,14 @@
-
 [
   {
     "id": 1,
     "name": "Beef Ramen",
     "price": 16.00,
-    "image_url": "https://example.com/beef_ramen.jpg"
+    "image_url": "https://via.placeholder.com/150?text=Beef+Ramen"
   },
   {
     "id": 2,
     "name": "Fried Dumpling",
     "price": 12.00,
-    "image_url": "https://example.com/dumpling.jpg"
+    "image_url": "https://via.placeholder.com/150?text=Fried+Dumpling"
   }
 ]
