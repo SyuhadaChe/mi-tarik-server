@@ -5,6 +5,7 @@ import os
 import qrcode
 from tkinter import messagebox, Tk, simpledialog
 import requests
+import webbrowser
 
 app = Flask(__name__)
 CORS(app)
@@ -69,16 +70,22 @@ def add_menu_item():
 
 def show_gui_popup():
     try:
-        url = "https://syuhadache.github.io/Mi-Tarik-Menu"
-        qr = qrcode.make(url)
-        qr.save("qr_temp.png")
-
         root = Tk()
         root.withdraw()  # Hide main window
-        messagebox.showinfo("Scan QR", f"Scan the QR code to view menu:\n{url}")
-        os.system("start qr_temp.png")
+        answer = messagebox.askyesno("Welcome to Mi Tarik", "Welcome to Mi Tarik Station!\n\nWould you like to start ordering?")
 
-        admin_pw = simpledialog.askstring("Admin", "Enter admin password:", show='*')
+        if answer:
+            url = "https://syuhadache.github.io/Mi-Tarik-Menu"
+            qr = qrcode.make(url)
+            qr.save("menu_qr.png")
+            messagebox.showinfo("Scan QR", f"Scan the QR code to view menu:\n{url}")
+            os.system("start menu_qr.png")
+            webbrowser.open(url)
+        else:
+            messagebox.showinfo("Goodbye", "Thank you for visiting Mi Tarik Station!")
+
+        # Admin login prompt
+        admin_pw = simpledialog.askstring("Admin", "Enter admin password (leave blank if not admin):", show='*')
         if admin_pw == "admin123":
             try:
                 response = requests.get("https://mi-tarik-server.onrender.com/orders")
@@ -95,11 +102,14 @@ def show_gui_popup():
                     messagebox.showerror("Error", f"Failed to fetch orders. Status: {response.status_code}")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to fetch orders.\n{e}")
+
         root.destroy()
+
     except Exception as e:
-        print(f"⚠️ QR popup failed: {e}")
+        print(f"⚠️ GUI popup failed: {e}")
 
 if __name__ == "__main__":
     print("\n🔗 Server running at: http://127.0.0.1:5000")
     show_gui_popup()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
