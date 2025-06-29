@@ -9,7 +9,7 @@ CORS(app)
 ORDERS_FILE = "website_orders.json"
 MENU_FILE = "menu.json"
 
-# Ensure files exist if not present
+# Ensure files exist
 def ensure_file_exists(path, default):
     if not os.path.exists(path):
         with open(path, "w") as f:
@@ -17,6 +17,10 @@ def ensure_file_exists(path, default):
 
 ensure_file_exists(ORDERS_FILE, [])
 ensure_file_exists(MENU_FILE, [])
+
+@app.route("/")
+def home():
+    return "Mi Tarik Server is running!"
 
 @app.route("/order", methods=["POST"])
 def submit_order():
@@ -77,8 +81,5 @@ def delete_menu_item():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # Use Render port or default 5000
     app.run(host="0.0.0.0", port=port)
-
-      
-                       
