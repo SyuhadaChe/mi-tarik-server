@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Tarik Station Menu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      background-color: #fff8f0;
+    }
+    h1 {
+      text-align: center;
+      color: #b33c00;
+    }
+    label, select, input {
+      display: block;
+      margin-top: 10px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #b33c00;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e65c00;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍜 Mi Tarik Menu 🍜</h1>
+
+  <label for="name">Your Name:</label>
+  <input type="text" id="name" placeholder="Enter your name">
+
+  <label for="type">Order Type:</label>
+  <select id="type">
+    <option>Online Order</option>
+    <option>Takeaway</option>
+    <option>Dine In</option>
+  </select>
+
+  <h3>Choose Menu Items:</h3>
+  <ul id="menu"></ul>
+
+  <h4>Total: RM <span id="total">0.00</span></h4>
+
+  <button onclick="submitOrder()">Submit Order</button>
+
+  <script>
+    const items = [
+      { id: 1, name: "Braised Beef Ramen", price: 22.00 },
+      { id: 2, name: "Beef Ramen", price: 16.00 },
+      { id: 3, name: "Fried Dumpling", price: 12.00 }
+    ];
+
+    const cart = [];
+
+    function updateCart() {
+      let total = cart.reduce((sum, item) => sum + item.price, 0);
+      document.getElementById("total").textContent = total.toFixed(2);
+    }
+
+    function addToCart(item) {
+      cart.push(item);
+      updateCart();
+      alert(item.name + " added to cart!");
+    }
+
+    function submitOrder() {
+      const name = document.getElementById("name").value.trim();
+      const type = document.getElementById("type").value;
+
+      if (!name) {
+        alert("Please enter your name.");
+        return;
+      }
+      if (cart.length === 0) {
+        alert("Your cart is empty.");
+        return;
+      }
+
+      const order = {
+        name: name,
+        type: type,
+        items: cart,
+        total: cart.reduce((sum, item) => sum + item.price, 0)
+      };
+
+      fetch("https://mi-tarik-backend.onrender.com/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Server error");
+        return res.json();
+      })
+      .then(data => {
+        alert("Order submitted successfully!");
+        cart.length = 0;
+        updateCart();
+      })
+      .catch(err => {
+        alert("Failed to submit order.\n" + err.message);
+      });
+    }
+
+    // Display menu
+    const menuList = document.getElementById("menu");
+    items.forEach(item => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.textContent = `${item.name} - RM${item.price.toFixed(2)}`;
+      btn.onclick = () => addToCart(item);
+      li.appendChild(btn);
+      menuList.appendChild(li);
+    });
+  </script>
+
+</body>
+</html>
