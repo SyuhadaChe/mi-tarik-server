@@ -9,7 +9,7 @@ CORS(app)
 ORDERS_FILE = "website_orders.json"
 MENU_FILE = "menu.json"
 
-# Ensure files exist
+# Ensure data files exist
 if not os.path.exists(ORDERS_FILE):
     with open(ORDERS_FILE, "w") as f:
         json.dump([], f)
@@ -53,6 +53,8 @@ def get_menu():
 def add_menu_item():
     try:
         new_item = request.json
+        if not all(key in new_item for key in ["id", "name", "price", "image_url"]):
+            return jsonify({"error": "Missing one or more required fields."}), 400
         with open(MENU_FILE, "r") as f:
             current_menu = json.load(f)
         current_menu.append(new_item)
