@@ -1,80 +1,46 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import json
-import os
 
 app = Flask(__name__)
 CORS(app)
 
-MENU_FILE = "menu.json"
-ORDERS_FILE = "website_order.json"
+menu = [
+    {"id": 1, "name": "Beef Ramen", "price": 16.00, "image_url": "https://via.placeholder.com/150?text=Beef+Ramen"},
+    {"id": 2, "name": "Fried Dumpling", "price": 12.00, "image_url": "https://via.placeholder.com/150?text=Fried+Dumpling"}
+]
 
+orders = []
 
-def load_data(file):
-    if os.path.exists(file):
-        with open(file, 'r') as f:
-            return json.load(f)
-    return []
-
-
-def save_data(file, data):
-    with open(file, 'w') as f:
-        json.dump(data, f, indent=2)
-
-
-@app.route('/')
+@app.route("/")
 def home():
-    return "Mi Tarik Server is running"
+    return "Welcome to Mi Tarik Server!"
 
+@app.route("/menu", methods=["GET", "POST"])
+def handle_menu():
+    if request.method == "GET":
+        return jsonify(menu)
+    elif request.method == "POST":
+        new_item = request.get_json()
+        menu.append(new_item)
+        return jsonify({"message": "Item added"}), 201
 
-@app.route('/menu', methods=['GET'])
-def get_menu():
-    return jsonify(load_data(MENU_FILE))
-
-
-@app.route('/menu', methods=['POST'])
-def add_menu():
-    menu = load_data(MENU_FILE)
-    item = request.json
-    menu.append(item)
-    save_data(MENU_FILE, menu)
-    return jsonify({"status": "success"})
-
-
-@app.route('/menu/delete', methods=['POST'])
-def delete_menu():
-    menu = load_data(MENU_FILE)
-    data = request.json
+@app.route("/menu/delete", methods=["POST"])
+def delete_menu_item():
+    data = request.get_json()
     item_id = data.get("id")
-    updated_menu = [item for item in menu if item.get("id") != item_id]
-    save_data(MENU_FILE, updated_menu)
-    return jsonify({"status": "deleted"})
+    global menu
+    menu = [item for item in menu if item["id"] != item_id]
+    return jsonify({"message": "Item deleted"}), 200
 
-
-@app.route('/order', methods=['POST'])
+@app.route("/order", methods=["POST"])
 def place_order():
-    orders = load_data(ORDERS_FILE)
-    order = request.json
-
-    if 'payment' not in order:
-        order['payment'] = {"method": "unknown"}
-    else:
-        payment = order['payment']
-        payment.setdefault("method", "unknown")
-        if payment['method'].lower() == "fpx":
-            payment.setdefault("bank", "")
-            payment.setdefault("username", "")
-            payment.setdefault("password", "")
-
+    order = request.get_json()
     orders.append(order)
-    save_data(ORDERS_FILE, orders)
-    return jsonify({"status": "received"})
+    return jsonify({"message": "Order received"}), 201
 
-
-@app.route('/orders', methods=['GET'])
+@app.route("/orders", methods=["GET"])
 def get_orders():
-    return jsonify(load_data(ORDERS_FILE))
+    return jsonify(orders)
 
-
-if __name__ == '__main__':
-    app.run(debug=False, port=5000)
+if __name__ == "__main__":
+    app.run(debug=True)
