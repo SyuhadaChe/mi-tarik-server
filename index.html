@@ -1,77 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Mi Tarik Station Menu</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mi Tarik Station</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    button { margin-top: 10px; }
+    body { font-family: Arial; margin: 20px; }
+    .item { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; }
+    .item img { width: 100px; height: 100px; margin-right: 10px; }
+    .item-name { font-weight: bold; }
+    .item-price { margin-left: auto; }
+    #fpx-fields { display: none; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Mi Tarik Station Menu</h1>
-  <form id="orderForm">
-    <label>Name: <input type="text" id="name" required></label><br><br>
-    <label>Order Type:
-      <select id="type">
-        <option>Online Order</option>
-        <option>Takeaway</option>
-        <option>Dine In</option>
-      </select>
-    </label><br><br>
+  <h1>Welcome to Mi Tarik Station</h1>
+  <div id="menu-container"></div>
 
-    <h3>Select Items:</h3>
-    <label><input type="checkbox" value="braised beef ramen" data-price="22"> Braised Beef Ramen - RM22.00</label><br>
-    <label><input type="checkbox" value="beef ramen" data-price="16"> Beef Ramen - RM16.00</label><br>
-    <label><input type="checkbox" value="fried dumpling" data-price="12"> Fried Dumpling - RM12.00</label><br><br>
+  <h2>Your Details</h2>
+  <label>Name: <input type="text" id="customer-name" required></label><br>
+  <label>Order Type:
+    <select id="order-type">
+      <option value="Dine-In">Dine-In</option>
+      <option value="Takeaway">Takeaway</option>
+      <option value="Online">Online</option>
+    </select>
+  </label><br><br>
 
-    <button type="submit">Submit Order</button>
-  </form>
+  <h3>Payment Method</h3>
+  <select id="payment-method" onchange="toggleFPXFields()">
+    <option value="cash">Cash</option>
+    <option value="fpx">FPX Online Banking</option>
+  </select>
 
-  <div id="result"></div>
+  <div id="fpx-fields">
+    <label>Bank Type: <input type="text" id="bank"></label><br>
+    <label>Username: <input type="text" id="fpx-username"></label><br>
+    <label>Password: <input type="password" id="fpx-password"></label><br>
+  </div>
+
+  <button onclick="submitOrder()">Submit Order</button>
 
   <script>
-    document.getElementById("orderForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const type = document.getElementById("type").value;
+    const MENU_URL = "https://mi-tarik-server.onrender.com/menu";
+    const ORDER_URL = "https://mi-tarik-server.onrender.com/order";
+    let menuItems = [];
 
-      const checkboxes = document.querySelectorAll("input[type='checkbox']:checked");
-      const items = [];
+    async function loadMenu() {
+      try {
+        const res = await fetch(MENU_URL);
+        menuItems = await res.json();
+        const container = document.getElementById("menu-container");
+        container.innerHTML = "";
+        menuItems.forEach((item, index) => {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.innerHTML = `
+            <img src="${item.image_url}" alt="${item.name}">
+            <span class="item-name">${item.name}</span>
+            <span class="item-price">RM ${item.price.toFixed(2)}</span>
+            <input type="checkbox" id="item-${index}" style="margin-left:10px;">
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        alert("Failed to load menu.");
+      }
+    }
+
+    function toggleFPXFields() {
+      const method = document.getElementById("payment-method").value;
+      document.getElementById("fpx-fields").style.display = method === "fpx" ? "block" : "none";
+    }
+
+    async function submitOrder() {
+      const name = document.getElementById("customer-name").value.trim();
+      const type = document.getElementById("order-type").value;
+      const method = document.getElementById("payment-method").value;
+
+      if (!name) return alert("Please enter your name.");
+
+      const selectedItems = [];
       let total = 0;
-      checkboxes.forEach(cb => {
-        const price = parseFloat(cb.dataset.price);
-        items.push({ name: cb.value, price });
-        total += price;
+
+      menuItems.forEach((item, index) => {
+        const checkbox = document.getElementById(`item-${index}`);
+        if (checkbox && checkbox.checked) {
+          selectedItems.push(item);
+          total += item.price;
+        }
       });
 
-      if (items.length === 0) {
-        alert("Please select at least one item.");
-        return;
+      if (selectedItems.length === 0) return alert("Please select at least one item.");
+
+      const payment = { method };
+      if (method === "fpx") {
+        payment.bank = document.getElementById("bank").value.trim();
+        payment.username = document.getElementById("fpx-username").value.trim();
+        payment.password = document.getElementById("fpx-password").value.trim();
+        if (!payment.bank || !payment.username || !payment.password)
+          return alert("Please fill all FPX payment details.");
       }
 
-      const order = { name, type, items, total };
+      const order = {
+        name,
+        type,
+        items: selectedItems,
+        total,
+        payment
+      };
 
       try {
-        const res = await fetch("https://mi-tarik-server.onrender.com/order", {
+        const res = await fetch(ORDER_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(order)
         });
 
-        const result = document.getElementById("result");
-
         if (res.ok) {
-          result.innerHTML = "<p style='color: green;'>Order submitted successfully!</p>";
+          alert("Order submitted successfully!");
+          window.location.reload();
         } else {
-          const errorText = await res.text();
-          result.innerHTML = `<p style='color: red;'>Server error: ${res.status} - ${errorText}</p>`;
+          alert("Failed to submit order.");
         }
       } catch (err) {
-        document.getElementById("result").innerHTML = "<p style='color: red;'>Failed to connect to server.</p>";
-        console.error(err);
+        alert("Error submitting order: " + err);
       }
-    });
+    }
+
+    loadMenu();
   </script>
 </body>
 </html>
+
+ 
