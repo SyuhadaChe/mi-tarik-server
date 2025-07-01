@@ -49,9 +49,16 @@ def place_order():
     orders = load_data(ORDERS_FILE)
     order = request.json
 
-    # Ensure payment info is saved
+    # Ensure payment info is structured correctly
     if 'payment' not in order:
         order['payment'] = {"method": "unknown"}
+    else:
+        payment = order['payment']
+        payment.setdefault("method", "unknown")
+        if payment['method'].lower() == "fpx":
+            payment.setdefault("bank", "")
+            payment.setdefault("username", "")
+            payment.setdefault("password", "")
 
     orders.append(order)
     save_data(ORDERS_FILE, orders)
