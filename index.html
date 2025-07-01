@@ -3,134 +3,175 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mi Tarik Station</title>
+  <title>Mi Tarik Online Menu</title>
   <style>
-    body { font-family: Arial; margin: 20px; }
-    .item { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; display: flex; align-items: center; }
-    .item img { width: 100px; height: 100px; margin-right: 10px; }
-    .item-name { font-weight: bold; }
-    .item-price { margin-left: auto; }
-    #fpx-fields { display: none; margin-top: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f3f3f3;
+    }
+    h1 {
+      text-align: center;
+      color: #a52a2a;
+    }
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .item {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px;
+      width: 200px;
+      background-color: #fff;
+      text-align: center;
+    }
+    img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+    }
+    .cart, .payment {
+      margin-top: 30px;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    button {
+      background-color: #a52a2a;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #7b1f1f;
+    }
   </style>
 </head>
 <body>
-  <h1>Welcome to Mi Tarik Station</h1>
-  <div id="menu-container"></div>
+  <h1>Welcome to Mi Tarik</h1>
+  <div class="menu" id="menu"></div>
 
-  <h2>Your Details</h2>
-  <label>Name: <input type="text" id="customer-name" required></label><br>
-  <label>Order Type:
-    <select id="order-type">
-      <option value="Dine-In">Dine-In</option>
-      <option value="Takeaway">Takeaway</option>
-      <option value="Online">Online</option>
-    </select>
-  </label><br><br>
-
-  <h3>Payment Method</h3>
-  <select id="payment-method" onchange="toggleFPXFields()">
-    <option value="cash">Cash</option>
-    <option value="fpx">FPX Online Banking</option>
-  </select>
-
-  <div id="fpx-fields">
-    <label>Bank Type: <input type="text" id="bank"></label><br>
-    <label>Username: <input type="text" id="fpx-username"></label><br>
-    <label>Password: <input type="password" id="fpx-password"></label><br>
+  <div class="cart" id="cart">
+    <h3>Your Cart</h3>
+    <ul id="cartList"></ul>
+    <p><strong>Total:</strong> RM <span id="totalPrice">0.00</span></p>
+    <label>Order Type:
+      <select id="orderType">
+        <option value="Dine-In">Dine-In</option>
+        <option value="Takeaway">Takeaway</option>
+      </select>
+    </label>
+    <br><br>
+    <label>Your Name: <input type="text" id="customerName" /></label>
+    <br><br>
+    <label>Payment Type:
+      <select id="paymentType">
+        <option value="Cash">Cash</option>
+        <option value="FPX">FPX Online</option>
+      </select>
+    </label>
+    <div id="fpxDetails" style="display: none;">
+      <label>Bank: <input type="text" id="bankName" /></label><br>
+      <label>Username: <input type="text" id="bankUser" /></label><br>
+      <label>Password: <input type="password" id="bankPass" /></label>
+    </div>
+    <br>
+    <button onclick="submitOrder()">Submit Order</button>
   </div>
 
-  <button onclick="submitOrder()">Submit Order</button>
-
   <script>
-    const MENU_URL = "https://mi-tarik-server.onrender.com/menu";
-    const ORDER_URL = "https://mi-tarik-server.onrender.com/order";
-    let menuItems = [];
+    let menu = [];
+    let cart = [];
 
-    async function loadMenu() {
-      try {
-        const res = await fetch(MENU_URL);
-        menuItems = await res.json();
-        const container = document.getElementById("menu-container");
-        container.innerHTML = "";
-        menuItems.forEach((item, index) => {
+    fetch("https://mi-tarik-server.onrender.com/menu")
+      .then(res => res.json())
+      .then(data => {
+        menu = data;
+        const menuDiv = document.getElementById("menu");
+        data.forEach(item => {
           const div = document.createElement("div");
           div.className = "item";
           div.innerHTML = `
-            <img src="${item.image_url}" alt="${item.name}">
-            <span class="item-name">${item.name}</span>
-            <span class="item-price">RM ${item.price.toFixed(2)}</span>
-            <input type="checkbox" id="item-${index}" style="margin-left:10px;">
+            <img src="${item.image_url}" alt="${item.name}" />
+            <h4>${item.name}</h4>
+            <p>RM ${item.price.toFixed(2)}</p>
+            <button onclick='addToCart(${JSON.stringify(item)})'>Add</button>
           `;
-          container.appendChild(div);
+          menuDiv.appendChild(div);
         });
-      } catch (err) {
-        alert("Failed to load menu.");
-      }
-    }
-
-    function toggleFPXFields() {
-      const method = document.getElementById("payment-method").value;
-      document.getElementById("fpx-fields").style.display = method === "fpx" ? "block" : "none";
-    }
-
-    async function submitOrder() {
-      const name = document.getElementById("customer-name").value.trim();
-      const type = document.getElementById("order-type").value;
-      const method = document.getElementById("payment-method").value;
-
-      if (!name) return alert("Please enter your name.");
-
-      const selectedItems = [];
-      let total = 0;
-
-      menuItems.forEach((item, index) => {
-        const checkbox = document.getElementById(`item-${index}`);
-        if (checkbox && checkbox.checked) {
-          selectedItems.push(item);
-          total += item.price;
-        }
       });
 
-      if (selectedItems.length === 0) return alert("Please select at least one item.");
+    function addToCart(item) {
+      cart.push(item);
+      updateCart();
+    }
 
-      const payment = { method };
-      if (method === "fpx") {
-        payment.bank = document.getElementById("bank").value.trim();
-        payment.username = document.getElementById("fpx-username").value.trim();
-        payment.password = document.getElementById("fpx-password").value.trim();
-        if (!payment.bank || !payment.username || !payment.password)
-          return alert("Please fill all FPX payment details.");
+    function updateCart() {
+      const cartList = document.getElementById("cartList");
+      cartList.innerHTML = "";
+      let total = 0;
+      cart.forEach((item, i) => {
+        total += item.price;
+        const li = document.createElement("li");
+        li.textContent = `${item.name} - RM ${item.price.toFixed(2)}`;
+        const btn = document.createElement("button");
+        btn.textContent = "❌";
+        btn.onclick = () => { cart.splice(i, 1); updateCart(); };
+        li.appendChild(btn);
+        cartList.appendChild(li);
+      });
+      document.getElementById("totalPrice").textContent = total.toFixed(2);
+    }
+
+    document.getElementById("paymentType").addEventListener("change", function() {
+      const fpx = document.getElementById("fpxDetails");
+      fpx.style.display = this.value === "FPX" ? "block" : "none";
+    });
+
+    function submitOrder() {
+      const name = document.getElementById("customerName").value.trim();
+      const type = document.getElementById("orderType").value;
+      const payment = document.getElementById("paymentType").value;
+      const total = parseFloat(document.getElementById("totalPrice").textContent);
+      if (!name || cart.length === 0) {
+        alert("Please enter your name and add items to cart.");
+        return;
       }
 
-      const order = {
-        name,
-        type,
-        items: selectedItems,
-        total,
-        payment
-      };
+      let paymentInfo = payment;
+      if (payment === "FPX") {
+        const bank = document.getElementById("bankName").value;
+        const user = document.getElementById("bankUser").value;
+        const pass = document.getElementById("bankPass").value;
+        if (!bank || !user || !pass) {
+          alert("Fill in FPX bank details.");
+          return;
+        }
+        paymentInfo = `FPX - Bank: ${bank}, User: ${user}`;
+      }
 
-      try {
-        const res = await fetch(ORDER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(order)
-        });
-
+      const order = { name, type, total, payment: paymentInfo, items: cart };
+      fetch("https://mi-tarik-server.onrender.com/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order)
+      }).then(res => {
         if (res.ok) {
           alert("Order submitted successfully!");
-          window.location.reload();
+          cart = [];
+          updateCart();
+          document.getElementById("customerName").value = "";
         } else {
           alert("Failed to submit order.");
         }
-      } catch (err) {
-        alert("Error submitting order: " + err);
-      }
+      });
     }
-
-    loadMenu();
   </script>
 </body>
 </html>
-
- 
