@@ -48,6 +48,11 @@ def delete_menu():
 def place_order():
     orders = load_data(ORDERS_FILE)
     order = request.json
+
+    # Ensure payment info is saved
+    if 'payment' not in order:
+        order['payment'] = {"method": "unknown"}
+
     orders.append(order)
     save_data(ORDERS_FILE, orders)
     return jsonify({"status": "received"})
@@ -58,4 +63,3 @@ def get_orders():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
